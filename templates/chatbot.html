@@ -37,7 +37,7 @@
      
 
 <!-- Sidebar Link -->
-<a href="javascript:void(0);" onclick="toggleCommunity()">Community</a>
+<a href="javascript:void(0);" onclick="toggleCommunity()">Community ▽</a>
 
 <!-- Community Submenu (Toggles Open) -->
 <div id="community-container" style="display: none;">
@@ -47,7 +47,7 @@
     <a href="#askE;" onclick="loadContent('askE')">Ask the Expert</a>
 </ul>
 </div>
-
+        <a href="#founderSpeaks" onclick="loadContent('founder')">Founder Speaks</a>
         <a href="#settings" onclick="loadContent('settings')">Settings</a>
         <a href="/logout" class="nav-link">Logout</a></li>
         
@@ -194,6 +194,108 @@
         </div>
     </div>
 </div>
+
+
+
+<div id="founder" class="content-page">
+    <div class="founder-wrapper">
+
+         <!-- Wise Words from the Founder Section -->
+         <div class="founder-messages">
+            <h3 class="founder-heading">Wise Words from the Founder</h3>
+            <div id="founderMessages"></div>
+        </div>
+
+        <!-- Message Input Box (Only for Founder) -->
+        <div id="postMessageContainer" class="hidden">
+            <textarea id="founderMessageInput" placeholder="Write a message..."></textarea>
+            <button onclick="postFounderMessage()">Post</button>
+        </div>
+        
+        <!-- Background Images for Decoration -->
+        <div class="founder-bg founder-bg-1"></div> 
+        <div class="founder-bg founder-bg-2"></div> 
+       
+
+        <!-- Founder Content -->
+        <h3 class="founder-heading">Meet Our Founder</h3>
+
+        <div class="founder-content">
+            <img src="/static/images/founder.png" alt="Founder" class="founder-photo">
+            <div class="founder-message">
+                <p><strong>Welcome!</strong> At LevelUP, we are passionate about transforming phonics education through innovative, multi-sensory learning experiences.</p>
+                <p>Our journey began with a vision to make learning more engaging and accessible. We equip educators with cutting-edge techniques that inspire young learners to explore language with confidence.</p>
+                <p>Join us as we shape the future of education, one sound at a time!</p>
+                <p class="founder-signature">- Keena Shah</p>
+            </div>
+        </div>
+
+        
+
+    </div>
+</div>
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        checkFounderAccess();  // Check if logged-in user is the founder
+        fetchFounderMessages();  // Load messages on page load
+    });
+    
+    // Fetch founder messages and display them
+    function fetchFounderMessages() {
+        fetch('/get_founder_messages')
+        .then(response => response.json())
+        .then(messages => {
+            const messageContainer = document.getElementById("founderMessages");
+            messageContainer.innerHTML = "";
+    
+            messages.forEach(msg => {
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("founder-message-box");
+                messageDiv.innerHTML = `<p>${msg.message}</p><small>${msg.timestamp}</small>`;
+                messageContainer.appendChild(messageDiv);
+            });
+        })
+        .catch(error => console.error("Error fetching messages:", error));
+    }
+    
+    // Function to allow the founder to post a message
+    function postFounderMessage() {
+        const message = document.getElementById("founderMessageInput").value;
+        if (!message.trim()) return alert("Message cannot be empty!");
+    
+        fetch("/post_founder_message", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            document.getElementById("founderMessageInput").value = ""; // Clear input
+            fetchFounderMessages(); // Refresh messages
+        })
+        .catch(error => console.error("Error posting message:", error));
+    }
+    
+    // Check if the logged-in user is the founder
+    function checkFounderAccess() {
+        fetch('/get_user_profile')
+        .then(response => response.json())
+        .then(user => {
+            if (user.email === "snehafrankocean@gmail.com") {
+                document.getElementById("postMessageContainer").classList.remove("hidden"); // Show input box
+            }
+        })
+        .catch(error => console.error("Error checking user:", error));
+    }
+    </script>
+    
+
+
+
 
 
         <!-- Planner Section -->
@@ -1077,10 +1179,14 @@ async function fetchUserProfile() {
                 <td>${log.resource_type} - ${log.resource_name}</td>
                 <td>${log.date}</td>
                 <td>${log.source}</td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="viewPdf('${log.pdf}')">View</button>
-                    <a href="${log.pdf}" download="${log.resource_name.replace(/\s+/g, '_')}.pdf" class="btn btn-success btn-sm">Download</a>
-                </td>
+               <td style="white-space: nowrap; text-align: center; padding: 8px;">
+    <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+        <button class="btn btn-primary" style="min-width: 100px;" onclick="viewPdf('${log.pdf}')">View</button>
+        <a href="${log.pdf}" download="${log.resource_name.replace(/\s+/g, '_')}.pdf" class="btn btn-secondary" style="min-width: 100px;">Download</a>
+    </div>
+</td>
+
+
             `;
             pdfLogBody.appendChild(logRow);
         });
