@@ -166,7 +166,10 @@ class ActivityLog(db.Model):
 
     user = db.relationship("User", backref=db.backref("activity_logs", lazy=True))
 
-
+class FounderMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ✅ Ensure Tables are Created
 with app.app_context():
@@ -1119,8 +1122,33 @@ def get_user_stats():
 
 
 
+FOUNDER_EMAIL = "snehafrankocean@gmail.com"  # Set the founder's email
+
+@app.route("/post_founder_message", methods=["POST"])
+def post_founder_message():
+    if "email" not in session or session["email"] != FOUNDER_EMAIL:
+        return jsonify({"error": "Unauthorized"}), 403  # Block non-founder users
+
+    data = request.get_json()
+    message_content = data.get("message")
+
+    if not message_content:
+        return jsonify({"error": "Message cannot be empty"}), 400
+
+    new_message = FounderMessage(message=message_content)
+    db.session.add(new_message)
+    db.session.commit()
+
+    return jsonify({"message": "Message posted successfully!"})
 
 
+@app.route("/get_founder_messages", methods=["GET"])
+def get_founder_messages():
+    messages = FounderMessage.query.order_by(FounderMessage.timestamp.desc()).limit(5).all()
+    return jsonify([
+        {"message": msg.message, "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
+        for msg in messages
+    ])
 
 
 @app.route("/logout")
